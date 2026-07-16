@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Matemática Neon Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['Space Mono', 'monospace'],
+                    },
+                    colors: {
+                        darkBg: '#0a0a0f',
+                        glass: 'rgba(255, 255, 255, 0.03)',
+                        neon: {
+                            cyan: '#00f3ff',
+                            pink: '#ff003c',
+                            yellow: '#fcee0a',
+                            purple: '#bc13fe'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                        'slide-up': 'slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                        'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both',
+                        'pulse-glow': 'pulseGlow 2s infinite'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.6' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0a0a0f;
+            color: #ffffff;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            background-image: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #0a0a0f 70%);
+            min-height: 100vh;
+        }
+
+        /* Neon Glow Utilities */
+        .glow-cyan { text-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff; }
+        .glow-pink { text-shadow: 0 0 10px #ff003c, 0 0 20px #ff003c; }
+        .glow-yellow { text-shadow: 0 0 10px #fcee0a, 0 0 20px #fcee0a; }
+        .glow-purple { text-shadow: 0 0 10px #bc13fe, 0 0 20px #bc13fe; }
+
+        .border-glow-cyan { box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), inset 0 0 10px rgba(0, 243, 255, 0.1); border-color: rgba(0, 243, 255, 0.6); }
+        .border-glow-pink { box-shadow: 0 0 10px rgba(255, 0, 60, 0.3), inset 0 0 10px rgba(255, 0, 60, 0.1); border-color: rgba(255, 0, 60, 0.6); }
+        .border-glow-yellow { box-shadow: 0 0 10px rgba(252, 238, 10, 0.3), inset 0 0 10px rgba(252, 238, 10, 0.1); border-color: rgba(252, 238, 10, 0.6); }
+        .border-glow-purple { box-shadow: 0 0 10px rgba(188, 19, 254, 0.3), inset 0 0 10px rgba(188, 19, 254, 0.1); border-color: rgba(188, 19, 254, 0.6); }
+
+        .btn-neon {
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            background: rgba(20, 20, 30, 0.6);
+        }
+        .btn-neon:active { transform: scale(0.95); }
+        .btn-neon:hover { filter: brightness(1.2); }
+
+        .view { display: none; }
+        .view.active { display: flex; }
+        
+        /* Oculta scrollbar */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4 antialiased overflow-x-hidden">
+
+    <div class="w-full max-w-md mx-auto relative min-h-[90vh] flex flex-col pt-8">
+        
+        <!-- HEADER GLOBAL -->
+        <div class="absolute top-0 left-0 w-full flex justify-between items-center py-4 px-2 z-10">
+            <div id="btn-back" class="hidden cursor-pointer p-2 text-gray-400 hover:text-white transition-colors" onclick="UI.goHome()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </div>
+            <div class="flex-1"></div>
+            <!-- Controle de Som (Toggle) -->
+            <button id="btn-sound" class="p-2 text-neon-cyan hover:glow-cyan transition-all" onclick="Audio.toggleMute()">
+                <svg id="icon-sound-on" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="block"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                <svg id="icon-sound-off" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden text-gray-600"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+            </button>
+        </div>
+
+        <!-- VIEW: HOME -->
+        <main id="view-home" class="view active flex-col items-center w-full gap-10 mt-10 animate-fade-in">
+            <div class="text-center">
+                <h1 class="text-5xl font-black tracking-tighter uppercase italic drop-shadow-xl text-white">
+                    Math<span class="text-neon-cyan glow-cyan">Neon</span>
+                </h1>
+                <p class="text-gray-400 font-mono text-sm mt-2 tracking-widest uppercase">Sistema de Treinamento</p>
+            </div>
+            
+            <div class="w-full flex flex-col gap-8 animate-slide-up">
+                
+                <!-- Modo Estudo -->
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center gap-2 pl-2">
+                        <div class="w-2 h-2 rounded-full bg-neon-cyan animate-pulse-glow"></div>
+                        <h3 class="text-gray-400 font-bold uppercase text-xs tracking-widest">Base de Dados (Estudo)</h3>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="UI.showStudy('addition')" class="btn-neon p-4 rounded-2xl border border-glow-cyan text-neon-cyan font-bold uppercase text-sm tracking-wide flex flex-col items-center gap-2">
+                            <span class="text-2xl font-mono">+</span> Adição
+                        </button>
+                        <button onclick="UI.showStudy('subtraction')" class="btn-neon p-4 rounded-2xl border border-glow-pink text-neon-pink font-bold uppercase text-sm tracking-wide flex flex-col items-center gap-2">
+                            <span class="text-2xl font-mono">-</span> Subtração
+                        </button>
+                        <button onclick="UI.showStudy('multiplication')" class="btn-neon p-4 rounded-2xl border border-glow-yellow text-neon-yellow font-bold uppercase text-sm tracking-wide flex flex-col items-center gap-2">
+                            <span class="text-2xl font-mono">×</span> Multiplicação
+                        </button>
+                        <button onclick="UI.showStudy('division')" class="btn-neon p-4 rounded-2xl border border-glow-purple text-neon-purple font-bold uppercase text-sm tracking-wide flex flex-col items-center gap-2">
+                            <span class="text-2xl font-mono">÷</span> Divisão
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modo Desafio -->
+                <div class="flex flex-col gap-3 mt-4">
+                    <div class="flex items-center gap-2 pl-2">
+                        <div class="w-2 h-2 rounded-full bg-neon-pink animate-pulse-glow"></div>
+                        <h3 class="text-gray-400 font-bold uppercase text-xs tracking-widest">Simulador (Desafio)</h3>
+                    </div>
+                    <div class="grid grid-cols-4 gap-3">
+                        <button onclick="Engine.startGame('addition')" class="btn-neon py-6 rounded-2xl border border-glow-cyan text-neon-cyan font-mono text-4xl shadow-lg hover:shadow-cyan-500/20">+</button>
+                        <button onclick="Engine.startGame('subtraction')" class="btn-neon py-6 rounded-2xl border border-glow-pink text-neon-pink font-mono text-4xl shadow-lg hover:shadow-pink-500/20">-</button>
+                        <button onclick="Engine.startGame('multiplication')" class="btn-neon py-6 rounded-2xl border border-glow-yellow text-neon-yellow font-mono text-4xl shadow-lg hover:shadow-yellow-500/20">×</button>
+                        <button onclick="Engine.startGame('division')" class="btn-neon py-6 rounded-2xl border border-glow-purple text-neon-purple font-mono text-4xl shadow-lg hover:shadow-purple-500/20">÷</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- VIEW: ESTUDO -->
+        <main id="view-study" class="view flex-col items-center w-full gap-6 mt-8">
+            <h2 id="study-title" class="text-3xl font-black uppercase tracking-widest glow-cyan text-neon-cyan">Adição</h2>
+            
+            <div class="w-full relative group">
+                <select id="study-select" onchange="UI.renderStudyContent()" class="appearance-none p-4 rounded-xl bg-glass border border-gray-700 font-mono text-lg w-full text-center text-white outline-none cursor-pointer focus:border-neon-cyan transition-colors">
+                    <!-- Gerado JS -->
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400 group-hover:text-white transition-colors">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+
+            <div id="study-list" class="flex flex-col gap-2 w-full font-mono text-lg mt-2">
+                <!-- Gerado JS -->
+            </div>
+        </main>
+
+        <!-- VIEW: QUIZ -->
+        <main id="view-quiz" class="view flex-col items-center w-full mt-4 h-full flex-1">
+            
+            <!-- Header do Quiz (HUD) -->
+            <div class="w-full flex justify-between items-end bg-glass border border-gray-800 p-4 rounded-2xl mb-6">
+                <div class="flex flex-col">
+                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Progresso</span>
+                    <span id="quiz-counter" class="font-mono font-bold text-xl text-white">1/10</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Pontos</span>
+                    <span id="quiz-score" class="font-mono font-bold text-xl text-white">0</span>
+                </div>
+            </div>
+
+            <!-- Barra de Progresso -->
+            <div class="w-full h-1 bg-gray-800 rounded-full mb-8 overflow-hidden">
+                <div id="quiz-progress-bar" class="h-full bg-white transition-all duration-300 w-[10%]"></div>
+            </div>
+            
+            <!-- Área da Pergunta -->
+            <div id="question-container" class="flex-1 flex items-center justify-center min-h-[180px] w-full bg-glass border border-gray-800 rounded-3xl shadow-2xl relative overflow-hidden">
+                <!-- Grid bg effect -->
+                <div class="absolute inset-0 opacity-[0.03] bg-[linear-gradient(rgba(255,255,255,1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,1)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+                
+                <h2 id="quiz-question" class="text-6xl md:text-8xl font-mono font-bold tracking-tighter text-center z-10 glow-cyan text-neon-cyan">
+                    2 + 2
+                </h2>
+            </div>
+
+            <!-- Opções de Resposta -->
+            <div id="quiz-options" class="grid grid-cols-2 gap-4 w-full mt-8">
+                <!-- Gerado JS -->
+            </div>
+        </main>
+
+        <!-- VIEW: RESULTADOS -->
+        <main id="view-result" class="view flex-col items-center justify-center w-full gap-8 h-[70vh]">
+            <div class="flex flex-col items-center gap-4 text-center animate-slide-up">
+                <div class="text-sm font-bold uppercase tracking-[0.3em] text-gray-500">Missão Concluída</div>
+                <div id="result-score" class="text-8xl font-mono font-bold text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+                    1000
+                </div>
+                <div class="font-mono text-xl text-gray-400">Pontos Finais</div>
+                
+                <div id="result-message" class="mt-4 text-lg font-bold"></div>
+            </div>
+            
+            <div class="w-full mt-8 animate-fade-in" style="animation-delay: 0.5s;">
+                <button onclick="UI.goHome()" class="btn-neon w-full p-5 bg-white text-black font-bold text-lg rounded-2xl uppercase tracking-widest hover:bg-gray-200">
+                    Retornar ao Menu
+                </button>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // CONFIGURAÇÕES GERAIS
+        const CONFIG = {
+            TOTAL_QUESTIONS: 10,
+            POINTS_PER_CORRECT: 100,
+            OPERATIONS: {
+                addition: { name: 'Adição', sign: '+', color: 'cyan', hex: '#00f3ff' },
+                subtraction: { name: 'Subtração', sign: '-', color: 'pink', hex: '#ff003c' },
+                multiplication: { name: 'Multiplicação', sign: '×', color: 'yellow', hex: '#fcee0a' },
+                division: { name: 'Divisão', sign: '÷', color: 'purple', hex: '#bc13fe' }
+            }
+        };
+
+        // ESTADO GLOBAL DO APLICATIVO
+        const State = {
+            currentMode: null, // 'addition', etc.
+            score: 0,
+            questionIndex: 0,
+            correctAnswer: 0,
+            isProcessingAnswer: false,
+            audioEnabled: true
+        };
+
+        // CONTROLADOR DE ÁUDIO (Tone.js Synth)
+        const Audio = {
+            synth: null,
+            init() {
+                if (!this.synth) {
+                    // Sintetizador estilo 8-bit simples
+                    this.synth = new Tone.Synth({
+                        oscillator: { type: 'square' },
+                        envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 }
+                    }).toDestination();
+                    this.synth.volume.value = -10;
+                }
+            },
+            play(type) {
+                if (!State.audioEnabled) return;
+                this.init();
+                
+                // Necessário para iniciar áudio nos navegadores modernos
+                if (Tone.context.state !== 'running') Tone.context.resume();
+
+                const now = Tone.now();
+                switch(type) {
+                    case 'click':
+                        this.synth.triggerAttackRelease("C5", "32n", now);
+                        break;
+                    case 'correct':
+                        this.synth.triggerAttackRelease("E5", "16n", now);
+                        this.synth.triggerAttackRelease("G5", "16n", now + 0.1);
+                        this.synth.triggerAttackRelease("C6", "8n", now + 0.2);
+                        break;
+                    case 'wrong':
+                        this.synth.triggerAttackRelease("D4", "8n", now);
+                        this.synth.triggerAttackRelease("A3", "4n", now + 0.15);
+                        break;
+                    case 'finish':
+                        this.synth.triggerAttackRelease("C5", "8n", now);
+                        this.synth.triggerAttackRelease("E5", "8n", now + 0.2);
+                        this.synth.triggerAttackRelease("G5", "8n", now + 0.4);
+                        this.synth.triggerAttackRelease("C6", "2n", now + 0.6);
+                        break;
+                }
+            },
+            toggleMute() {
+                State.audioEnabled = !State.audioEnabled;
+                document.getElementById('icon-sound-on').classList.toggle('hidden', !State.audioEnabled);
+                document.getElementById('icon-sound-off').classList.toggle('hidden', State.audioEnabled);
+                if(State.audioEnabled) this.play('click');
+            }
+        };
+
+        // CONTROLADOR DE INTERFACE
+        const UI = {
+            switchView(viewId) {
+                document.querySelectorAll('.view').forEach(v => {
+                    v.classList.remove('active', 'animate-fade-in');
+                });
+                const target = document.getElementById(viewId);
+                target.classList.add('active', 'animate-fade-in');
+                
+                // Gerencia visibilidade do botão voltar
+                document.getElementById('btn-back').style.display = (viewId === 'view-home') ? 'none' : 'block';
+                window.scrollTo(0,0);
+            },
+
+            goHome() {
+                Audio.play('click');
+                this.switchView('view-home');
+            },
+
+            // --- MODO ESTUDO ---
+            showStudy(op) {
+                Audio.play('click');
+                State.currentMode = op;
+                const config = CONFIG.OPERATIONS[op];
+                
+                const title = document.getElementById('study-title');
+                title.innerText = config.name;
+                title.className = `text-3xl font-black uppercase tracking-widest glow-${config.color} text-neon-${config.color}`;
+
+                const select = document.getElementById('study-select');
+                select.innerHTML = '';
+                for(let i=1; i<=10; i++) {
+                    select.innerHTML += `<option value="${i}" class="bg-darkBg text-white">Tabuada do ${i}</option>`;
+                }
+
+                this.renderStudyContent();
+                this.switchView('view-study');
+            },
+
+            renderStudyContent() {
+                const n = parseInt(document.getElementById('study-select').value);
+                const list = document.getElementById('study-list');
+                const op = State.currentMode;
+                const config = CONFIG.OPERATIONS[op];
+                
+                list.innerHTML = '';
+                
+                for(let i=1; i<=10; i++) {
+                    let n1, n2, result;
+                    if (op === 'addition') { n1 = n; n2 = i; result = n+i; }
+                    if (op === 'subtraction') { n1 = n+i; n2 = n; result = i; }
+                    if (op === 'multiplication') { n1 = n; n2 = i; result = n*i; }
+                    if (op === 'division') { n1 = n*i; n2 = n; result = i; }
+
+                    const item = document.createElement('div');
+                    item.className = "flex items-center justify-between p-3 border-b border-gray-800/50 text-gray-300 hover:bg-glass transition-colors rounded-lg";
+                    item.innerHTML = `
+                        <div class="flex-1 text-right pr-4">${n1}</div>
+                        <div class="text-neon-${config.color}">${config.sign}</div>
+                        <div class="flex-1 text-center">${n2}</div>
+                        <div class="text-gray-600">=</div>
+                        <div class="flex-1 text-left pl-4 font-bold text-white">${result}</div>
+                    `;
+                    list.appendChild(item);
+                }
+            },
+
+            // --- MODO QUIZ ---
+            updateQuizHUD(config) {
+                document.getElementById('quiz-counter').innerText = `${State.questionIndex + 1}/${CONFIG.TOTAL_QUESTIONS}`;
+                document.getElementById('quiz-score').innerText = State.score;
+                
+                // Atualiza cor da barra de progresso e largura
+                const bar = document.getElementById('quiz-progress-bar');
+                const percentage = ((State.questionIndex) / CONFIG.TOTAL_QUESTIONS) * 100;
+                bar.style.width = `${percentage}%`;
+                bar.style.backgroundColor = config.hex;
+                bar.style.boxShadow = `0 0 10px ${config.hex}`;
+            },
+
+            renderQuestion(text, config) {
+                const qEl = document.getElementById('quiz-question');
+                qEl.innerText = text;
+                qEl.className = `text-6xl md:text-8xl font-mono font-bold tracking-tighter text-center z-10 glow-${config.color} text-neon-${config.color} animate-fade-in`;
+            },
+
+            renderOptions(options, config) {
+                const grid = document.getElementById('quiz-options');
+                grid.innerHTML = '';
+                
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = `btn-neon py-6 px-4 border border-gray-700 rounded-2xl font-mono font-bold text-3xl text-white shadow-sm hover:border-${config.color} transition-all`;
+                    btn.innerText = opt;
+                    btn.onclick = () => Engine.checkAnswer(opt, btn, config);
+                    grid.appendChild(btn);
+                });
+            },
+
+            showFeedback(btnElement, isCorrect, config) {
+                const container = document.getElementById('question-container');
+                
+                if (isCorrect) {
+                    btnElement.classList.add(`bg-neon-${config.color}`, 'text-darkBg', 'scale-105');
+                    btnElement.classList.remove('text-white');
+                    btnElement.style.boxShadow = `0 0 20px ${config.hex}`;
+                } else {
+                    btnElement.classList.add('bg-red-600', 'border-red-500');
+                    container.classList.add('animate-shake');
+                    setTimeout(() => container.classList.remove('animate-shake'), 400);
+                    
+                    // Mostra a correta
+                    Array.from(document.getElementById('quiz-options').children).forEach(b => {
+                        if (parseInt(b.innerText) === State.correctAnswer) {
+                            b.classList.add('border-green-500', 'text-green-400');
+                        }
+                    });
+                }
+            },
+
+            showResults() {
+                document.getElementById('result-score').innerText = State.score;
+                const msg = document.getElementById('result-message');
+                
+                if(State.score === 1000) { msg.innerText = "PERFEITO! Sistema dominado."; msg.className = "mt-4 text-lg font-bold text-neon-cyan glow-cyan"; }
+                else if(State.score >= 700) { msg.innerText = "ÓTIMO TRABALHO! Quase um ciborgue."; msg.className = "mt-4 text-lg font-bold text-neon-yellow glow-yellow"; }
+                else { msg.innerText = "TREINAMENTO INCOMPLETO. Tente novamente."; msg.className = "mt-4 text-lg font-bold text-neon-pink glow-pink"; }
+
+                this.switchView('view-result');
+            }
+        };
+
+        // MOTOR DO JOGO E LÓGICA
+        const Engine = {
+            startGame(op) {
+                Audio.play('click');
+                State.currentMode = op;
+                State.score = 0;
+                State.questionIndex = 0;
+                
+                UI.switchView('view-quiz');
+                this.nextQuestion();
+            },
+
+            nextQuestion() {
+                if (State.questionIndex >= CONFIG.TOTAL_QUESTIONS) {
+                    Audio.play('finish');
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+                    UI.showResults();
+                    return;
+                }
+
+                State.isProcessingAnswer = false;
+                const op = State.currentMode;
+                const config = CONFIG.OPERATIONS[op];
+                let n1, n2, text;
+
+                // Geração Matemática Inteligente (sem números negativos não intencionais)
+                switch(op) {
+                    case 'addition':
+                        n1 = Math.floor(Math.random() * 10) + 1;
+                        n2 = Math.floor(Math.random() * 10) + 1;
+                        State.correctAnswer = n1 + n2;
+                        text = `${n1} + ${n2}`;
+                        break;
+                    case 'subtraction':
+                        n2 = Math.floor(Math.random() * 10) + 1;
+                        State.correctAnswer = Math.floor(Math.random() * 10) + 1; // Resposta positiva
+                        n1 = n2 + State.correctAnswer;
+                        text = `${n1} - ${n2}`;
+                        break;
+                    case 'multiplication':
+                        n1 = Math.floor(Math.random() * 10) + 1;
+                        n2 = Math.floor(Math.random() * 10) + 1;
+                        State.correctAnswer = n1 * n2;
+                        text = `${n1} × ${n2}`;
+                        break;
+                    case 'division':
+                        n2 = Math.floor(Math.random() * 10) + 1;
+                        State.correctAnswer = Math.floor(Math.random() * 10) + 1;
+                        n1 = n2 * State.correctAnswer;
+                        text = `${n1} ÷ ${n2}`;
+                        break;
+                }
+
+                UI.updateQuizHUD(config);
+                UI.renderQuestion(text, config);
+                this.generateOptions();
+            },
+
+            generateOptions() {
+                let options = [State.correctAnswer];
+                
+                // Gera 3 opções falsas lógicas (próximas ao valor real)
+                while(options.length < 4) {
+                    let offset = Math.floor(Math.random() * 5) + 1;
+                    let fake = State.correctAnswer + (Math.random() > 0.5 ? offset : -offset);
+                    
+                    if (fake >= 0 && !options.includes(fake)) {
+                        options.push(fake);
+                    }
+                }
+                
+                // Embaralha Array
+                options.sort(() => Math.random() - 0.5);
+                
+                const config = CONFIG.OPERATIONS[State.currentMode];
+                UI.renderOptions(options, config);
+            },
+
+            checkAnswer(selectedVal, btnElement, config) {
+                if (State.isProcessingAnswer) return;
+                State.isProcessingAnswer = true;
+
+                const isCorrect = (selectedVal === State.correctAnswer);
+
+                if (isCorrect) {
+                    State.score += CONFIG.POINTS_PER_CORRECT;
+                    Audio.play('correct');
+                    if (navigator.vibrate) navigator.vibrate(50);
+                } else {
+                    Audio.play('wrong');
+                    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+                }
+
+                UI.showFeedback(btnElement, isCorrect, config);
+
+                // Aguarda para a próxima pergunta
+                setTimeout(() => {
+                    State.questionIndex++;
+                    this.nextQuestion();
+                }, 1200);
+            }
+        };
+    </script>
+</body>
+</html>
